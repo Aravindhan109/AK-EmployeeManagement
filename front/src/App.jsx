@@ -322,7 +322,7 @@ const App = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/employees");
+      const res = await axios.get("https://backak-1ayu.onrender.com/api/employees");
       setEmployees(res.data);
     } catch (err) {
       message.error("Failed to fetch employees");
@@ -347,7 +347,7 @@ const App = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/employees/${id}`);
+      await axios.delete(`https://backak-1ayu.onrender.com/api/employees/${id}`);
       setEmployees(employees.filter((emp) => emp._id !== id));
       message.success("Employee deleted successfully");
     } catch {
@@ -360,7 +360,7 @@ const App = () => {
       const values = await form.validateFields();
       if (editingEmployee) {
         const res = await axios.put(
-          `http://localhost:5000/api/employees/${editingEmployee._id}`,
+          `https://backak-1ayu.onrender.com/api/employees/${editingEmployee._id}`,
           values
         );
         setEmployees(
@@ -369,7 +369,7 @@ const App = () => {
         message.success("Employee updated successfully");
       } else {
         const res = await axios.post(
-          "http://localhost:5000/api/employees/add",
+          "https://backak-1ayu.onrender.com/api/employees/add",
           values
         );
         setEmployees([...employees, res.data]);
