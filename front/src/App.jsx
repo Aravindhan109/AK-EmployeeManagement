@@ -307,8 +307,8 @@ import {
   Typography,
   Card,
   message,
-  Collapse,
   Spin,
+  Collapse,
 } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import axios from "axios";
@@ -322,18 +322,19 @@ const App = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const fetchEmployees = async () => {
     setLoading(true);
     try {
       const res = await axios.get("https://backak-1ayu.onrender.com/api/employees");
-      setEmployees(res.data);
+      // Sort by empId
+      const sorted = res.data.sort((a, b) => a.empId.localeCompare(b.empId));
+      setEmployees(sorted);
     } catch (err) {
       message.error("Failed to fetch employees");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -365,13 +366,27 @@ const App = () => {
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+
+      // Prevent duplicate Employee ID
+      if (!editingEmployee) {
+        const duplicate = employees.find(
+          (emp) => emp.empId.trim() === values.empId.trim()
+        );
+        if (duplicate) {
+          message.error(`Employee ID "${duplicate.empId}" already exists!`);
+          return;
+        }
+      }
+
       if (editingEmployee) {
         const res = await axios.put(
           `https://backak-1ayu.onrender.com/api/employees/${editingEmployee._id}`,
           values
         );
         setEmployees(
-          employees.map((emp) => (emp._id === editingEmployee._id ? res.data : emp))
+          employees.map((emp) =>
+            emp._id === editingEmployee._id ? res.data : emp
+          )
         );
         message.success("Employee updated successfully");
       } else {
@@ -382,18 +397,14 @@ const App = () => {
         setEmployees([...employees, res.data]);
         message.success("Employee added successfully");
       }
+
       setIsModalVisible(false);
     } catch {
       message.error("Error saving employee");
     }
   };
 
-  // Sort by Employee ID
-  const sortedEmployees = [...employees].sort((a, b) =>
-    a.empId.localeCompare(b.empId)
-  );
-
-  const filteredEmployees = sortedEmployees.filter(
+  const filteredEmployees = employees.filter(
     (emp) =>
       emp.name.toLowerCase().includes(searchText.toLowerCase()) ||
       emp.empId.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -401,12 +412,7 @@ const App = () => {
   );
 
   const columns = [
-    {
-      title: "Emp ID",
-      dataIndex: "empId",
-      key: "empId",
-      sorter: (a, b) => a.empId.localeCompare(b.empId),
-    },
+    { title: "Emp ID", dataIndex: "empId", key: "empId" },
     { title: "Name", dataIndex: "name", key: "name" },
     { title: "Age", dataIndex: "age", key: "age" },
     { title: "Role", dataIndex: "role", key: "role" },
@@ -460,16 +466,16 @@ const App = () => {
         </div>
       </Card>
 
-      {/* Table or Loading */}
-      <Card className="rounded-lg">
-        {loading ? (
-          <div className="flex justify-center items-center h-40">
-            <Spin size="large" />
-          </div>
-        ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden sm:block">
+      {/* Table or Collapse (Master-Detail for mobile) */}
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <Spin size="large" />
+        </div>
+      ) : (
+        <>
+          {/* Desktop & Tablet Table */}
+          <div className="hidden sm:block">
+            <Card className="rounded-lg">
               <Table
                 columns={columns}
                 dataSource={filteredEmployees}
@@ -477,41 +483,39 @@ const App = () => {
                 pagination={{ pageSize: 5 }}
                 scroll={{ x: 800 }}
               />
-            </div>
+            </Card>
+          </div>
 
-            {/* Mobile Collapse */}
-            <div className="sm:hidden">
+          {/* Mobile View - Master Detail */}
+          <div className="block sm:hidden">
+            <Card className="rounded-lg">
               <Collapse accordion>
                 {filteredEmployees.map((emp) => (
-                  <Panel header={`${emp.empId} - ${emp.name}`} key={emp._id}>
-                    <p><b>Employee ID:</b> {emp.empId}</p>
-                    <p><b>Name:</b> {emp.name}</p>
-                    <p><b>Age:</b> {emp.age}</p>
-                    <p><b>Role:</b> {emp.role}</p>
-                    <Space>
+                  <Panel header={`${emp.name} (${emp.empId})`} key={emp._id}>
+                    <p><strong>Employee ID:</strong> {emp.empId}</p>
+                    <p><strong>Name:</strong> {emp.name}</p>
+                    <p><strong>Age:</strong> {emp.age}</p>
+                    <p><strong>Role:</strong> {emp.role}</p>
+                    <Space wrap>
                       <Button
                         type="text"
                         icon={<EditOutlined style={{ color: "blue" }} />}
                         onClick={() => handleEdit(emp)}
-                      >
-                        Edit
-                      </Button>
+                      />
                       <Button
                         type="text"
                         danger
                         icon={<DeleteOutlined />}
                         onClick={() => handleDelete(emp._id)}
-                      >
-                        Delete
-                      </Button>
+                      />
                     </Space>
                   </Panel>
                 ))}
               </Collapse>
-            </div>
-          </>
-        )}
-      </Card>
+            </Card>
+          </div>
+        </>
+      )}
 
       {/* Modal */}
       <Modal
@@ -558,5 +562,6 @@ const App = () => {
 };
 
 export default App;
+
 
 
