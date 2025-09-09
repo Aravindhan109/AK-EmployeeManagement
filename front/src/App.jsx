@@ -328,7 +328,6 @@ const App = () => {
     setLoading(true);
     try {
       const res = await axios.get("https://backak-1ayu.onrender.com/api/employees");
-      // Sort by empId
       const sorted = res.data.sort((a, b) => a.empId.localeCompare(b.empId));
       setEmployees(sorted);
     } catch (err) {
@@ -356,7 +355,8 @@ const App = () => {
   const handleDelete = async (id) => {
     try {
       await axios.delete(`https://backak-1ayu.onrender.com/api/employees/${id}`);
-      setEmployees(employees.filter((emp) => emp._id !== id));
+      // Instant update without reload
+      setEmployees((prev) => prev.filter((emp) => emp._id !== id));
       message.success("Employee deleted successfully");
     } catch {
       message.error("Error deleting employee");
@@ -367,7 +367,7 @@ const App = () => {
     try {
       const values = await form.validateFields();
 
-      // Prevent duplicate Employee ID
+      // Duplicate check
       if (!editingEmployee) {
         const duplicate = employees.find(
           (emp) => emp.empId.trim() === values.empId.trim()
@@ -383,10 +383,9 @@ const App = () => {
           `https://backak-1ayu.onrender.com/api/employees/${editingEmployee._id}`,
           values
         );
-        setEmployees(
-          employees.map((emp) =>
-            emp._id === editingEmployee._id ? res.data : emp
-          )
+        // Instant update
+        setEmployees((prev) =>
+          prev.map((emp) => (emp._id === editingEmployee._id ? res.data : emp))
         );
         message.success("Employee updated successfully");
       } else {
@@ -394,7 +393,8 @@ const App = () => {
           "https://backak-1ayu.onrender.com/api/employees/add",
           values
         );
-        setEmployees([...employees, res.data]);
+        // Instant update
+        setEmployees((prev) => [...prev, res.data].sort((a, b) => a.empId.localeCompare(b.empId)));
         message.success("Employee added successfully");
       }
 
@@ -562,6 +562,7 @@ const App = () => {
 };
 
 export default App;
+
 
 
 
