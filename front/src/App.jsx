@@ -30,7 +30,6 @@ const App = () => {
     setLoading(true);
     try {
       const res = await axios.get("https://backak-1ayu.onrender.com/api/employees");
-      // Numeric sort by empId
       const sorted = res.data.sort((a, b) => Number(a.empId) - Number(b.empId));
       setEmployees(sorted);
     } catch (err) {
@@ -69,15 +68,16 @@ const App = () => {
     try {
       const values = await form.validateFields();
 
-      // Duplicate check
-      if (!editingEmployee) {
-        const duplicate = employees.find(
-          (emp) => Number(emp.empId) === Number(values.empId)
-        );
-        if (duplicate) {
-          message.error(`Employee ID "${values.empId}" already exists!`);
-          return;
-        }
+      // Duplicate check for both add & edit
+      const duplicate = employees.find(
+        (emp) =>
+          Number(emp.empId) === Number(values.empId) &&
+          (!editingEmployee || emp._id !== editingEmployee._id)
+      );
+
+      if (duplicate) {
+        message.error(`Employee ID "${duplicate.empId}" already exists!`);
+        return;
       }
 
       if (editingEmployee) {
@@ -111,7 +111,7 @@ const App = () => {
   const filteredEmployees = employees.filter(
     (emp) =>
       emp.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      String(emp.empId).includes(searchText) ||
+      emp.empId.toString().includes(searchText.toLowerCase()) ||
       emp.role.toLowerCase().includes(searchText.toLowerCase())
   );
 
@@ -236,7 +236,7 @@ const App = () => {
             label="Employee ID"
             rules={[{ required: true, message: "Please enter Employee ID!" }]}
           >
-            <Input type="number" placeholder="Enter employee ID" />
+            <Input placeholder="Enter employee ID" type="number" />
           </Form.Item>
           <Form.Item
             name="name"
