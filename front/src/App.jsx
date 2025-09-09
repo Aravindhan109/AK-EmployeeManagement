@@ -68,16 +68,15 @@ const App = () => {
     try {
       const values = await form.validateFields();
 
-      // Duplicate check for both add & edit
-      const duplicate = employees.find(
-        (emp) =>
-          Number(emp.empId) === Number(values.empId) &&
-          (!editingEmployee || emp._id !== editingEmployee._id)
-      );
-
-      if (duplicate) {
-        message.error(`Employee ID "${duplicate.empId}" already exists!`);
-        return;
+      // Duplicate check for add only
+      if (!editingEmployee) {
+        const duplicate = employees.find(
+          (emp) => Number(emp.empId) === Number(values.empId)
+        );
+        if (duplicate) {
+          message.error(`Employee ID "${duplicate.empId}" already exists!`);
+          return;
+        }
       }
 
       if (editingEmployee) {
@@ -236,7 +235,11 @@ const App = () => {
             label="Employee ID"
             rules={[{ required: true, message: "Please enter Employee ID!" }]}
           >
-            <Input placeholder="Enter employee ID" type="number" />
+            <Input
+              placeholder="Enter employee ID"
+              type="number"
+              disabled={!!editingEmployee} // Disabled in edit mode
+            />
           </Form.Item>
           <Form.Item
             name="name"
